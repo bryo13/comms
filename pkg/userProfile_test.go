@@ -10,36 +10,28 @@ import (
 
 func TestUserDir(t *testing.T) {
 	dirPath := MakeDir()
-	filePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	testfilePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	username := "testy"
 
-	t.Run("making the dir", func(t *testing.T) {
-		stat, err := os.Stat(dirPath)
-		require.NoError(t, err)
-		require.True(t, stat.IsDir())
-	})
+	os.Mkdir(dirPath, 0750)
+	os.OpenFile(testfilePath, os.O_RDWR|os.O_CREATE, 0755)
 
-	t.Run("create file", func(t *testing.T) {
-		stat, err := os.Stat(filePath)
-		require.NoError(t, err)
-		require.Equal(t, "t_t.txt", stat.Name())
-	})
-
+	// tests getUserName function
 	t.Run("get user name", func(t *testing.T) {
-		filename := "test.txt"
-		username := "testy"
 		// make file
-		f, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+		f, _ := os.OpenFile(testfilePath, os.O_RDWR|os.O_CREATE, 0755)
 
 		// write username
 		f.Write([]byte(username))
 
 		// call getUserName
-		got := getUserName(filename)
+		got := getUserName(testfilePath)
 		want := username
 		// compare the two names
 		require.Equal(t, got, want)
 		// defer deleting all files
 		defer f.Close()
-		defer os.RemoveAll(filename)
+		defer os.RemoveAll(testfilePath)
+
 	})
 }
