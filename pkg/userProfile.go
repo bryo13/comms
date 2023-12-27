@@ -20,28 +20,27 @@ func createUser() string {
 }
 
 // returns the path our folder lives
-func MakeDir() string {
-	home, _ := homedir.Dir()
-	path := fmt.Sprintf("%s/%s", home, ".terminal_text")
+func MakeDir() {
+	path := dirPath()
 	err := os.Mkdir(path, 0750)
 	if err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
-	return path
+
 }
 
 func MakeUserFIle(username string) {
-	dirPath := MakeDir()
-
-	filePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	MakeDir()
+	filePath := userFilePath()
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// format username = username + newline
-	formated_user := fmt.Sprintf("%s\n", username)
-	if _, err := f.Write([]byte(formated_user)); err != nil {
+	formated_username := fmt.Sprintf("%s\n", username)
+
+	if _, err := f.Write([]byte(formated_username)); err != nil {
 		f.Close() // ignore error; Write error takes precedence
 		log.Fatal(err)
 	}
@@ -51,11 +50,15 @@ func MakeUserFIle(username string) {
 }
 
 func checklIfUserExists() bool {
-	dirpath := MakeDir()
-	if err := os.Mkdir(dirpath, 0750); err != nil {
+	filePath := userFilePath()
+	f, err := os.Open(filePath)
+	if err != nil {
+		f.Close()
+		return false
+	} else {
+		f.Close()
 		return true
 	}
-	return false
 }
 
 func getUserName(filepath string) string {
@@ -81,15 +84,28 @@ func getUserName(filepath string) string {
 }
 
 func InitUser() {
-	dirPath := MakeDir()
-	filePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	filePath := userFilePath()
 	userAvailable := checklIfUserExists()
 	if userAvailable {
 		user := getUserName(filePath)
 		fmt.Println(user, "welcome back")
-		return
-	}
+	} else {
 
-	username := createUser()
-	MakeUserFIle(username)
+		username := createUser()
+		MakeUserFIle(username)
+	}
+}
+
+// helper method that returns dir path
+func dirPath() string {
+	home, _ := homedir.Dir()
+	path := fmt.Sprintf("%s/%s", home, ".terminal_text")
+	return path
+}
+
+// helper method that return username path
+func userFilePath() string {
+	dirPath := dirPath()
+	filePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	return filePath
 }

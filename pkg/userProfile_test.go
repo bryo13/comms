@@ -9,11 +9,11 @@ import (
 )
 
 func TestUserDir(t *testing.T) {
-	dirPath := MakeDir()
-	testfilePath := fmt.Sprintf("%s/%s", dirPath, "t_t.txt")
+	path := dirPath()
+	testfilePath := fmt.Sprintf("%s/%s", path, "t_t.txt")
 	username := "testy"
 
-	os.Mkdir(dirPath, 0750)
+	os.Mkdir(path, 0750)
 	os.OpenFile(testfilePath, os.O_RDWR|os.O_CREATE, 0755)
 
 	// tests getUserName function
@@ -31,7 +31,7 @@ func TestUserDir(t *testing.T) {
 		require.Equal(t, got, want)
 		// defer deleting all files
 		defer f.Close()
-		defer os.RemoveAll(testfilePath)
+		defer os.RemoveAll(path)
 
 	})
 }
