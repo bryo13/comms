@@ -17,7 +17,7 @@ func init() {
 // to people we trust
 
 //go:embed .assets/access.txt
-// var ourIP []byte
+// var ipToGive []byte
 
 func main() {
 	pkg.InitUser()
