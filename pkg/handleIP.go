@@ -2,10 +2,14 @@
 // in a file in the assets dir, when sent a handshake takes place and you
 // can dial and comm, idealy.
 
+// aes block counter
+
 package pkg
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"io"
@@ -15,6 +19,17 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+type enc struct {
+	nonce []byte
+}
+
+var non []byte
+
+func init() {
+	e := new(enc)
+	non = e.generateNonce()
+}
 
 func getPublicIP() (string, error) {
 	checkInternt := CheckInternet()
@@ -36,51 +51,40 @@ func getPublicIP() (string, error) {
 }
 
 func encryptIP() string {
-
 	plainText, err := getPublicIP()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	checkErr("reading IP", err)
 
 	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	checkErr("error opening .env", err)
 
 	key := os.Getenv("KEY")
 	c, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		log.Fatal("Error creating a cypher")
-	}
+	checkErr("error creating a cypher", err)
 
-	alloc := make([]byte, 169)
-	c.Encrypt(alloc, []byte(plainText))
+	aesgcm, err := cipher.NewGCM(c)
+	checkErr("error creating gcm", err)
 
-	return hex.EncodeToString(alloc)
+	cipherText := aesgcm.Seal(nil, non, []byte(plainText), nil)
+	return hex.EncodeToString(cipherText)
 }
 
-func decrypt() string {
-	file, err := os.OpenFile(".assets/access.txt", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
+func Decrypt() string {
+	encData := encryptIP()
 
-	data := make([]byte, 169)
-	count, err := file.Read(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	encIp := data[:count]
+	err := godotenv.Load()
+	checkErr("error opening .env", err)
 
 	key := os.Getenv("KEY")
 	c, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		log.Fatal(err)
-	}
-	alloc := make([]byte, 169)
-	c.Decrypt(alloc, encIp)
-	return string(alloc[:])
+	checkErr("error creating a cypher", err)
+
+	aesgcm, err := cipher.NewGCM(c)
+	checkErr("error creating gcm", err)
+
+	hexEncData, _ := hex.DecodeString(encData)
+	decData, err := aesgcm.Open(nil, non, hexEncData, nil)
+	checkErr("Error decrypting", err)
+	return string(decData)
 }
 
 func WriteIP() error {
@@ -111,4 +115,21 @@ func createAssetsDir() {
 	if err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
+}
+
+// error handling helper func
+func checkErr(msg string, err error) {
+	if err != nil {
+		log.Fatalf("Error in %s. The err is %v", msg, err.Error())
+		os.Exit(2)
+	}
+}
+
+// helper nonce gen
+func (e *enc) generateNonce() []byte {
+	e.nonce = make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, e.nonce); err != nil {
+		panic(err.Error())
+	}
+	return e.nonce
 }

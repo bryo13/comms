@@ -16,9 +16,10 @@ func init() {
 // for sharing purposes, we include our assests
 // to people we trust
 
-//go:embed .assets/access.txt
-// var ipToGive []byte
+// //go:embed .assets/access.txt
+// // var ipToGive []byte
 
 func main() {
 	pkg.InitUser()
+
 }
